@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5435/finflowdb
+    username: finflow_user
+    password: finflow_pass
