@@ -3,3 +3,21 @@ spring:
     url: jdbc:postgresql://localhost:5435/finflowdb
     username: finflow_user
     password: finflow_pass
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+
+jwt:
+  secret: L0FDSa6l38+QI6Vm41XjYppZD4BRbcncpMa/oQA+qdg=
+  accessTokenExpiration: 86400000
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        orm.jdbc.bind: TRACE
