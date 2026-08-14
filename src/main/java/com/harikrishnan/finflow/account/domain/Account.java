@@ -53,6 +53,10 @@ public class Account {
         this.user = user;
     }
 
+    public void updateName (String name) {
+        this.name = name;
+    }
+
     public void credit(BigDecimal amount) {
         this.balance = this.balance.add(amount);
     }
