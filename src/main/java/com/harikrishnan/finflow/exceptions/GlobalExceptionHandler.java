@@ -79,5 +79,26 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ExceptionResponseDto> handleResourceNotFoundException (Exception exception) {
+        log.error("Resource not found exception : {} " , exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                ExceptionResponseDto.builder()
+                        .statusCode(HttpStatus.CONFLICT.value())
+                        .message(exception.getMessage())
+                        .build());
+
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ExceptionResponseDto> handleConflictException (Exception exception) {
+        log.error("Conflict exception : {} " , exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ExceptionResponseDto.builder()
+                        .statusCode(HttpStatus.CONFLICT.value())
+                        .message(exception.getMessage())
+                        .build());
+    }
 
 }
