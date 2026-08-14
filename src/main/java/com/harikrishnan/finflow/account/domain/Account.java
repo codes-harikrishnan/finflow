@@ -8,7 +8,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.naming.InsufficientResourcesException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -52,6 +51,10 @@ public class Account {
         this.currency = currency;
         this.balance = balance;
         this.user = user;
+    }
+
+    public void updateName (String name) {
+        this.name = name;
     }
 
     public void credit(BigDecimal amount) {
