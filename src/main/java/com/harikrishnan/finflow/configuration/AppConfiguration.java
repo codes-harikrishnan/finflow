@@ -3,6 +3,7 @@ package com.harikrishnan.finflow.configuration;
 import com.harikrishnan.finflow.user.util.jwt.JWTFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -24,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableJpaAuditing
 @EnableConfigurationProperties
 @EnableWebSecurity
+@EnableCaching
 @RequiredArgsConstructor
 public class AppConfiguration {
 

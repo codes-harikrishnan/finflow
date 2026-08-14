@@ -3,12 +3,18 @@ spring:
     url: jdbc:postgresql://localhost:5435/finflowdb
     username: finflow_user
     password: finflow_pass
+  cache:
+    type: redis
 
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 
 jwt:
