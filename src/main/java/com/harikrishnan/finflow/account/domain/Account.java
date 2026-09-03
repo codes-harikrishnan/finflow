@@ -58,6 +58,7 @@ public class Account {
     }
 
     public void credit(BigDecimal amount) {
+        System.out.println("crediting amount :"+amount +" to account with id:"+ this.getId());
         this.balance = this.balance.add(amount);
     }
 

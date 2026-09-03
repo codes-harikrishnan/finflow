@@ -79,7 +79,10 @@ public class TransactionService {
             }
 
             else  {
+                System.out.println("TRANSFER");
+                System.out.println("TRANSFER request Account Id:"+ transactionRequest.getToAccountId());
                 if(transactionRequest.getToAccountId() == null) {
+                    System.out.println("TRANSFER ConflictException");
                     throw new ConflictException("toAccountId is required for TRANSFER transactions");
                 }
                 Account toAccount = accountRepository.findByIdAndUser(transactionRequest.getToAccountId(),user).orElseThrow(() -> new ResourceNotFoundException("Unable to find an account to where the amount has to be transffered"));
