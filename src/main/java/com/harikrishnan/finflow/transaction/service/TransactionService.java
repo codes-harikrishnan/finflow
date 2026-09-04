@@ -1,6 +1,7 @@
 package com.harikrishnan.finflow.transaction.service;
 import com.harikrishnan.finflow.account.domain.Account;
 import com.harikrishnan.finflow.account.repository.AccountRepository;
+import com.harikrishnan.finflow.budget.repository.BudgetRepository;
 import com.harikrishnan.finflow.category.domain.Category;
 import com.harikrishnan.finflow.category.repository.CategoryRepository;
 import com.harikrishnan.finflow.exceptions.ConflictException;
@@ -39,6 +40,8 @@ public class TransactionService {
 
     private final SecurityUtils securityUtils;
 
+    private final BudgetRepository budgetRepository;
+
     private Transaction buildTransaction (TransactionRequest transactionRequest, Account account, Category category, User user) {
 
         return Transaction.builder()
@@ -76,11 +79,16 @@ public class TransactionService {
 
             else if(transactionRequest.getTransactionType() == TransactionType.EXPENSE) {
                 account.debit(transactionRequest.getAmount());
+                if(category != null) {
+                    LocalDate date = transactionRequest.getTransactionDate() != null ? transactionRequest.getTransactionDate() : LocalDate.now();
+                    budgetRepository.findByUserAndCategoryAndMonthAndYear(user,category,date.getMonthValue(),date.getYear()).ifPresent(budget -> {
+                        budget.recordSpend(transactionRequest.getAmount());
+                    });
+                }
             }
 
             else  {
-                System.out.println("TRANSFER");
-                System.out.println("TRANSFER request Account Id:"+ transactionRequest.getToAccountId());
+                log.info("Processing TRANSFER transaction to account id: {}", transactionRequest.getToAccountId());
                 if(transactionRequest.getToAccountId() == null) {
                     System.out.println("TRANSFER ConflictException");
                     throw new ConflictException("toAccountId is required for TRANSFER transactions");
