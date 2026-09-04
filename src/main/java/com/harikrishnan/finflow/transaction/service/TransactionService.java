@@ -1,7 +1,10 @@
 package com.harikrishnan.finflow.transaction.service;
 import com.harikrishnan.finflow.account.domain.Account;
 import com.harikrishnan.finflow.account.repository.AccountRepository;
+import com.harikrishnan.finflow.budget.domain.BudgetAlert;
+import com.harikrishnan.finflow.budget.domain.BudgetStatus;
 import com.harikrishnan.finflow.budget.repository.BudgetRepository;
+import com.harikrishnan.finflow.budget.service.BudgetAlertService;
 import com.harikrishnan.finflow.category.domain.Category;
 import com.harikrishnan.finflow.category.repository.CategoryRepository;
 import com.harikrishnan.finflow.exceptions.ConflictException;
@@ -17,6 +20,7 @@ import com.harikrishnan.finflow.utils.SecurityUtils;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +46,8 @@ public class TransactionService {
     private final SecurityUtils securityUtils;
 
     private final BudgetRepository budgetRepository;
+
+    private final BudgetAlertService budgetAlertService;
 
     private Transaction buildTransaction (TransactionRequest transactionRequest, Account account, Category category, User user) {
 
@@ -79,10 +86,17 @@ public class TransactionService {
 
             else if(transactionRequest.getTransactionType() == TransactionType.EXPENSE) {
                 account.debit(transactionRequest.getAmount());
+
                 if(category != null) {
                     LocalDate date = transactionRequest.getTransactionDate() != null ? transactionRequest.getTransactionDate() : LocalDate.now();
-                    budgetRepository.findByUserAndCategoryAndMonthAndYear(user,category,date.getMonthValue(),date.getYear()).ifPresent(budget -> {
+                        budgetRepository.findByUserAndCategoryAndMonthAndYear(user,category,date.getMonthValue(),date.getYear()).ifPresent(budget -> {
                         budget.recordSpend(transactionRequest.getAmount());
+
+                        if(budget.getBudgetStatus() == BudgetStatus.EXCEEDED) {
+                            Map<String,String> mdc = MDC.getCopyOfContextMap();
+
+                            budgetAlertService.sendAlertToUserExceedingBudgetLimit(user.getEmailId(),budget.getId(), budget.getCategory().getName(),budget.getLimitAmount(),mdc);
+                        }
                     });
                 }
             }
@@ -90,7 +104,6 @@ public class TransactionService {
             else  {
                 log.info("Processing TRANSFER transaction to account id: {}", transactionRequest.getToAccountId());
                 if(transactionRequest.getToAccountId() == null) {
-                    System.out.println("TRANSFER ConflictException");
                     throw new ConflictException("toAccountId is required for TRANSFER transactions");
                 }
                 Account toAccount = accountRepository.findByIdAndUser(transactionRequest.getToAccountId(),user).orElseThrow(() -> new ResourceNotFoundException("Unable to find an account to where the amount has to be transffered"));

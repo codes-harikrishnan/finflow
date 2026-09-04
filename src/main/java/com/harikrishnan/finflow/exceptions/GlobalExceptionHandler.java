@@ -122,4 +122,12 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ExceptionResponseDto> handleInsufficientFundsException (Exception exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ExceptionResponseDto.builder()
+                        .message(exception.getMessage())
+                        .statusCode(HttpStatus.CONFLICT.value())
+                .build());
+    }
+
 }
