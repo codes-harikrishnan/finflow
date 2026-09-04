@@ -4,6 +4,9 @@ import com.harikrishnan.finflow.account.domain.Account;
 import com.harikrishnan.finflow.account.domain.AccountType;
 import com.harikrishnan.finflow.account.domain.Currency;
 import com.harikrishnan.finflow.account.repository.AccountRepository;
+import com.harikrishnan.finflow.budget.domain.Budget;
+import com.harikrishnan.finflow.budget.domain.BudgetStatus;
+import com.harikrishnan.finflow.budget.repository.BudgetRepository;
 import com.harikrishnan.finflow.category.domain.Category;
 import com.harikrishnan.finflow.category.domain.CategoryType;
 import com.harikrishnan.finflow.category.repository.CategoryRepository;
@@ -52,6 +55,9 @@ public class TransactionServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private BudgetRepository budgetRepository;
 
     @Mock
     private SecurityUtils securityUtils;
@@ -433,6 +439,158 @@ void  performTransaction_WithAccountNotOwnedByUser_ShouldThrowResourceNotFoundEx
 
     assertThatThrownBy(() -> transactionService.performTransaction(transactionRequest)).isInstanceOf(ResourceNotFoundException.class);
 }
+
+
+@Test
+    void  performTransaction_WithExpenseAndMatchingBudget_ShouldCallRecordSpend () {
+    TransactionRequest transactionRequest =   TransactionRequest.builder()
+            .transactionType(TransactionType.EXPENSE)
+            .accountId(1L)
+            .amount(BigDecimal.valueOf(100))
+            .categoryId(1L)
+            .transactionDate(LocalDate.parse("2026-08-21"))
+            .description("abcd")
+            .toAccountId(null)
+            .build();
+
+    Account account = Account.builder()
+            .user(securityUtils.getCurrentUser())
+            .name("ABC")
+            .type(AccountType.SAVINGS)
+            .currency(Currency.EUR)
+            .balance(BigDecimal.valueOf(100))
+            .build();
+
+    ReflectionTestUtils.setField(account,"id",1L);
+
+    Category category = Category.builder()
+            .type(CategoryType.EXPENSE)
+            .user(securityUtils.getCurrentUser())
+            .name("CAT1")
+            .build();
+    ReflectionTestUtils.setField(category,"id",1L);
+
+    Budget budget = Budget.builder()
+            .year(2026)
+            .month(8)
+            .budgetStatus(BudgetStatus.ACTIVE)
+            .category(category)
+            .limitAmount(BigDecimal.valueOf(500))
+            .spentAmount(BigDecimal.valueOf(100))
+            .build();
+
+    Transaction transaction =   Transaction.builder()
+            .transactionType(TransactionType.TRANSFER)
+            .account(account)
+            .amount(BigDecimal.valueOf(100))
+            .category(category)
+            .date(LocalDate.parse("2026-08-21"))
+            .description("abcd")
+            .toAccountId(2L)
+            .build();
+    ReflectionTestUtils.setField(transaction,"id",1L);
+
+
+    when(accountRepository.findByIdAndUser(any(),any(User.class))).thenReturn(Optional.of(account));
+    when(categoryRepository.findById(any(Long.class))).thenReturn(Optional.of(category));
+    when(budgetRepository.findByUserAndCategoryAndMonthAndYear(any(User.class),any(Category.class),any(Integer.class),any(Integer.class))).thenReturn(Optional.of(budget));
+    when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+
+    transactionService.performTransaction(transactionRequest);
+    verify(budgetRepository).findByUserAndCategoryAndMonthAndYear(any(),any(),any(),any());
+    assertThat(budget.getSpentAmount()).isEqualTo(BigDecimal.valueOf(200));
+    }
+
+    @Test
+    void performTransaction_WithExpenseAndNoMatchingBudget_ShouldNotCallRecordSpend () {
+        TransactionRequest transactionRequest =   TransactionRequest.builder()
+                .transactionType(TransactionType.EXPENSE)
+                .accountId(1L)
+                .amount(BigDecimal.valueOf(100))
+                .categoryId(1L)
+                .transactionDate(LocalDate.parse("2026-08-21"))
+                .description("abcd")
+                .toAccountId(null)
+                .build();
+
+        Account account = Account.builder()
+                .user(securityUtils.getCurrentUser())
+                .name("ABC")
+                .type(AccountType.SAVINGS)
+                .currency(Currency.EUR)
+                .balance(BigDecimal.valueOf(100))
+                .build();
+
+        ReflectionTestUtils.setField(account,"id",1L);
+
+        Category category = Category.builder()
+                .type(CategoryType.EXPENSE)
+                .user(securityUtils.getCurrentUser())
+                .name("CAT1")
+                .build();
+        ReflectionTestUtils.setField(category,"id",1L);
+
+        Transaction transaction =   Transaction.builder()
+                .transactionType(TransactionType.TRANSFER)
+                .account(account)
+                .amount(BigDecimal.valueOf(100))
+                .category(category)
+                .date(LocalDate.parse("2026-08-21"))
+                .description("abcd")
+                .toAccountId(2L)
+                .build();
+        ReflectionTestUtils.setField(transaction,"id",1L);
+
+        when(accountRepository.findByIdAndUser(any(),any(User.class))).thenReturn(Optional.of(account));
+        when(categoryRepository.findById(any(Long.class))).thenReturn(Optional.of(category));
+        when(budgetRepository.findByUserAndCategoryAndMonthAndYear(any(User.class),any(Category.class),any(Integer.class),any(Integer.class))).thenReturn(Optional.empty());
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+
+        transactionService.performTransaction(transactionRequest);
+
+        verify(budgetRepository).findByUserAndCategoryAndMonthAndYear(any(),any(),any(),any());
+
+        assertThat(account.getBalance()).isEqualTo(BigDecimal.ZERO);
+
+        verify(budgetRepository, never()).save(any());
+    }
+
+    @Test
+    void performTransaction_WithExpenseAndNullCategory_ShouldNotCheckBudget () {
+        TransactionRequest transactionRequest =   TransactionRequest.builder()
+                .transactionType(TransactionType.EXPENSE)
+                .accountId(1L)
+                .amount(BigDecimal.valueOf(100))
+                .categoryId(null)
+                .transactionDate(LocalDate.parse("2026-08-21"))
+                .description("abcd")
+                .toAccountId(null)
+                .build();
+
+        Account account = Account.builder()
+                .user(securityUtils.getCurrentUser())
+                .name("ABC")
+                .type(AccountType.SAVINGS)
+                .currency(Currency.EUR)
+                .balance(BigDecimal.valueOf(100))
+                .build();
+
+        ReflectionTestUtils.setField(account,"id",1L);
+
+        Transaction transaction =   Transaction.builder()
+                .transactionType(TransactionType.TRANSFER)
+                .account(account)
+                .amount(BigDecimal.valueOf(100))
+                .category(null)
+                .date(LocalDate.parse("2026-08-21"))
+                .description("abcd")
+                .toAccountId(2L)
+                .build();
+        ReflectionTestUtils.setField(transaction,"id",1L);
+
+
+        verify(budgetRepository, never()).findByUserAndCategoryAndMonthAndYear(any(),any(),any(),any());
+    }
 
 @Test
 void  deleteTransaction_WithIncome_ShouldReverseDebitAndDelete () {
