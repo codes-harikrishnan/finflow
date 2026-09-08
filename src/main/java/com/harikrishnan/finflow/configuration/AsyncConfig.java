@@ -1,4 +1,4 @@
-package com.harikrishnan.finflow.utils;
+package com.harikrishnan.finflow.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -16,8 +16,10 @@ import com.harikrishnan.finflow.exceptions.ResourceNotFoundException;
 import com.harikrishnan.finflow.transaction.domain.Transaction;
 import com.harikrishnan.finflow.transaction.domain.TransactionType;
 import com.harikrishnan.finflow.transaction.dto.GetTransactionRequest;
+import com.harikrishnan.finflow.transaction.dto.TransactionRecordedEvent;
 import com.harikrishnan.finflow.transaction.dto.TransactionRequest;
 import com.harikrishnan.finflow.transaction.dto.TransactionResponse;
+import com.harikrishnan.finflow.transaction.event.TransactionEventPublisher;
 import com.harikrishnan.finflow.transaction.repository.TransactionRepository;
 import com.harikrishnan.finflow.user.domain.Role;
 import com.harikrishnan.finflow.user.domain.User;
@@ -62,8 +64,13 @@ public class TransactionServiceTest {
     @Mock
     private SecurityUtils securityUtils;
 
+    @Mock
+    private TransactionEventPublisher transactionEventPublisher;
+
     @InjectMocks
     private TransactionService transactionService;
+
+
 
 
     @BeforeEach
@@ -495,7 +502,8 @@ void  performTransaction_WithAccountNotOwnedByUser_ShouldThrowResourceNotFoundEx
     when(categoryRepository.findById(any(Long.class))).thenReturn(Optional.of(category));
     when(budgetRepository.findByUserAndCategoryAndMonthAndYear(any(User.class),any(Category.class),any(Integer.class),any(Integer.class))).thenReturn(Optional.of(budget));
     when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
-
+    doNothing().when(transactionEventPublisher)
+            .publishTransactionRecorded(any(TransactionRecordedEvent.class));
     transactionService.performTransaction(transactionRequest);
     verify(budgetRepository).findByUserAndCategoryAndMonthAndYear(any(),any(),any(),any());
     assertThat(budget.getSpentAmount()).isEqualTo(BigDecimal.valueOf(200));

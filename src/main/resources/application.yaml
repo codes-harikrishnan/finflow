@@ -3,6 +3,19 @@ spring:
     url: jdbc:postgresql://localhost:5435/finflowdb
     username: finflow_user
     password: finflow_pass
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: finflow-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: "transactionRecordedEvent:com.harikrishnan.finflow.transaction.event.TransactionRecordedEvent"
   cache:
     type: redis
 

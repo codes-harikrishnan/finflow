@@ -12,8 +12,10 @@ import com.harikrishnan.finflow.exceptions.ResourceNotFoundException;
 import com.harikrishnan.finflow.transaction.domain.Transaction;
 import com.harikrishnan.finflow.transaction.domain.TransactionType;
 import com.harikrishnan.finflow.transaction.dto.GetTransactionRequest;
+import com.harikrishnan.finflow.transaction.dto.TransactionRecordedEvent;
 import com.harikrishnan.finflow.transaction.dto.TransactionRequest;
 import com.harikrishnan.finflow.transaction.dto.TransactionResponse;
+import com.harikrishnan.finflow.transaction.event.TransactionEventPublisher;
 import com.harikrishnan.finflow.transaction.repository.TransactionRepository;
 import com.harikrishnan.finflow.user.domain.User;
 import com.harikrishnan.finflow.utils.SecurityUtils;
@@ -48,6 +50,8 @@ public class TransactionService {
     private final BudgetRepository budgetRepository;
 
     private final BudgetAlertService budgetAlertService;
+
+    private final TransactionEventPublisher transactionEventPublisher;
 
     private Transaction buildTransaction (TransactionRequest transactionRequest, Account account, Category category, User user) {
 
@@ -113,6 +117,16 @@ public class TransactionService {
 
             Transaction requestingTransaction = buildTransaction(transactionRequest,account,category,user);
             Transaction transaction =  transactionRepository.save(requestingTransaction);
+
+            transactionEventPublisher.publishTransactionRecorded(TransactionRecordedEvent.builder()
+                            .transactionId(transaction.getId())
+                            .userId(user.getId())
+                            .transactionType(transaction.getTransactionType().name())
+                            .accountId(transaction.getAccount().getId())
+                            .amount(transaction.getAmount())
+                            .categoryId(transaction.getCategory().getId())
+                            .transactionDate(transaction.getDate())
+                    .build());
 
       return TransactionResponse.builder()
               .id(transaction.getId())

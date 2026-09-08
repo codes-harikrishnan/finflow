@@ -25,7 +25,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableConfigurationProperties
 @EnableWebSecurity
-@EnableCaching
 @RequiredArgsConstructor
 public class AppConfiguration {
 
@@ -33,6 +32,8 @@ public class AppConfiguration {
     private final UserDetailsService userDetailsService;
 
     private final JWTFilter jwtFilter;
+
+    private final MDCLogFilter mdcLogFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder () {
@@ -45,7 +46,9 @@ public class AppConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(a -> a.requestMatchers("/user/**").permitAll().anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(mdcLogFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
         ;
 
         return httpSecurity.build();
