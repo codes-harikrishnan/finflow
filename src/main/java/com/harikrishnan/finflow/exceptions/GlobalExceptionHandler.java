@@ -3,11 +3,13 @@ package com.harikrishnan.finflow.exceptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 
 import java.util.HashMap;
@@ -99,6 +101,33 @@ public class GlobalExceptionHandler {
                         .statusCode(HttpStatus.CONFLICT.value())
                         .message(exception.getMessage())
                         .build());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ExceptionResponseDto> handleHttpMessageNotReadableException (HttpMessageNotReadableException exception) {
+        log.error("Conflict exception : {} " , exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ExceptionResponseDto.builder()
+                        .statusCode(HttpStatus.CONFLICT.value())
+                        .message(exception.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ExceptionResponseDto>handleMethodArgumentTypeMissmatchException (MethodArgumentTypeMismatchException exception) {
+        log.error("MethodArgumentTypeMismatchException: {}", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionResponseDto.builder()
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
+                        .message("Invalid parameter format for:"+exception.getName())
+                .build());
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ExceptionResponseDto> handleInsufficientFundsException (Exception exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ExceptionResponseDto.builder()
+                        .message(exception.getMessage())
+                        .statusCode(HttpStatus.CONFLICT.value())
+                .build());
     }
 
 }

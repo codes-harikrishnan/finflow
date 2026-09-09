@@ -45,6 +45,9 @@ public class Transaction {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
+    @Column(name = "toAccountId", nullable = true)
+    private Long toAccountId;
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -52,7 +55,7 @@ public class Transaction {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Transaction(User user, Account account, TransactionType transactionType, BigDecimal amount, String description, Category category, LocalDate date) {
+    public Transaction(User user, Account account, TransactionType transactionType, BigDecimal amount, String description, Category category, LocalDate date,Long toAccountId) {
         this.user = user;
         this.account = account;
         this.transactionType = transactionType;
@@ -60,6 +63,7 @@ public class Transaction {
         this.description = description;
         this.category = category;
         this.date = date;
+        this.toAccountId = toAccountId;
     }
 
 }
