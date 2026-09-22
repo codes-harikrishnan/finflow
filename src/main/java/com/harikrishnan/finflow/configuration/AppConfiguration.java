@@ -35,6 +35,8 @@ public class AppConfiguration {
 
     private final MDCLogFilter mdcLogFilter;
 
+    private final RateLimitFilter rateLimitFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder () {
         return new BCryptPasswordEncoder();
@@ -46,6 +48,7 @@ public class AppConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(a -> a.requestMatchers("/user/**").permitAll().anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(mdcLogFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
